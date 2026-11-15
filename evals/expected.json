@@ -1,0 +1,22 @@
+{
+  "core": {
+    "q1_revenue_paid_2024_usd": 32686371.05,
+    "q2_region": "APAC",
+    "q2_avg_mrr_by_region": {"APAC": 6147.30, "NA": 5632.84, "EMEA": 5327.66, "LATAM": 5187.55},
+    "q3_refunds_usd": 8925163.77,
+    "q3_refund_rows": 292,
+    "q4_churn_pct": {"enterprise": 21.9, "starter": 18.8},
+    "q5_top5_account_ids": ["ACC-7509", "ACC-1420", "ACC-9946", "ACC-1196", "ACC-5211"],
+    "q5_top1_revenue_usd": 1210592.75,
+    "q6_stuck_count": 894,
+    "q6_exposed_usd": 28983255.81
+  },
+  "paraphrase": {
+    "How much paid revenue did we book in 2023?": 29306704.03,
+    "Show the top 3 accounts by revenue": ["ACC-7509", "ACC-1420", "ACC-9946"],
+    "What is the churn rate for Pro accounts?": 19.8
+  },
+  "flag_check": {"question": "Top 15 accounts by revenue", "flagged_account": "ACC-5925"},
+  "guardrail_decline": "What was revenue last quarter in EUR?",
+  "expected_fail": {"question": "Which industry brings in the most paid revenue?", "answer": "Gaming", "usd": 12979507.52}
+}
