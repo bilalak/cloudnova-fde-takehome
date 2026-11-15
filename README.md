@@ -7,7 +7,7 @@ Ask plain-English questions about CloudNova's invoice ledger and get an answer y
 
 ## Setup and the two commands
 
-Requires Python 3.10+.
+Requires Python 3.12 (the version CI runs).
 
 ```bash
 python -m venv .venv && source .venv/bin/activate

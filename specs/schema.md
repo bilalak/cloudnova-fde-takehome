@@ -1,7 +1,8 @@
-# Schema spec — CloudNova invoices (nalTrack B)
+# Schema spec — CloudNova invoices (Track B)
 
 ## 1. Input
 data/cloudnova_invoices.csv — 5,125 rows, 19 columns, read as strings.
+The literal region value "NA" (North America) is a value, not a missing marker.
 
 ## 2. Order of operations
 1. Trim whitespace everywhere; empty string -> NULL.
@@ -9,7 +10,13 @@ data/cloudnova_invoices.csv — 5,125 rows, 19 columns, read as strings.
 3. Normalize categories (§3), parse amounts (§4) and dates (§5).
 4. Quarantine rows that fail parsing or mapping, with a reason (expected 0).
 5. Resolve near-duplicates (§6) -> 5,000 rows, invoice_id unique.
-6. Derive columns (§7), write outputs (§8), run gates (§9).
+6. Derive columns (§7), run gates (§9) in memory, then write outputs (§8).
+   Gates run before any write so that "fail -> write nothing" holds. The DuckDB
+   file is built under a temporary name and swapped in only when complete.
+7. Stop, don't guess: a value with no rule here (an unmapped payment_method, a
+   trailing currency code on the amount that differs from the currency column, a
+   near-duplicate tie that §6 cannot break) stops the run with "spec unclear",
+   non-zero exit, nothing written. The spec is updated before the code.
 
 ## 3. Categories (case-insensitive)
 - plan: starter|start|tier 1 -> starter; pro|professional|tier 2 -> pro;
@@ -35,7 +42,8 @@ data/cloudnova_invoices.csv — 5,125 rows, 19 columns, read as strings.
 ## 5. Dates (signup_date, invoice_date)
 - YYYY-MM-DD, YYYY/MM/DD: year first.
 - MM/DD/YYYY for slashes (no slash date has a first part > 12).
-- DD-MM-YYYY for dashes (151 of 239 dash invoice dates have a first part > 12).
+- DD-MM-YYYY for dashes (151 of 239 dash invoice dates have a first part > 12;
+  counted on raw rows, 146 of 233 after exact-duplicate removal).
 - "Jan 5 2024": month name.
 - date_ambiguous = TRUE for dash invoice dates with both parts <= 12.
 - is_future_date = TRUE where invoice_date > AS_OF_DATE. Rows are kept.
@@ -43,6 +51,9 @@ data/cloudnova_invoices.csv — 5,125 rows, 19 columns, read as strings.
 ## 6. Near-duplicates (same invoice_id, 43 ids)
 Keep the row with the highest status precedence:
 refunded > void > paid > failed > pending. Tie: latest invoice_date.
+If rows still tie, they must be identical after normalization (then either is
+kept); otherwise stop per §2.7. In this data 27 of the 43 ids tie this way: the
+rows differ only in raw status spelling (e.g. "completed" vs "paid").
 Rationale: terminal states are later events. This also removes the only two
 negative amounts carried by a "paid" row.
 
@@ -54,7 +65,8 @@ negative amounts carried by a "paid" row.
 - DuckDB table invoices_clean (one row per invoice).
 - DuckDB view accounts: one row per account_id, attributes from the latest invoice
   (invoice_date, then invoice_id): account_name, region, industry, plan, seats,
-  churned, csat_score, mrr_usd; plus revenue_usd = sum(amount_usd) of paid invoices.
+  churned, csat_score, mrr_usd; plus revenue_usd = sum(amount_usd) of paid invoices
+  (0 for an account with no paid invoices).
   Note: 976 account_ids carry more than one account_name; account_id is the key.
 - data/cleaned/quarantine.csv (with reason), data/cleaned/data_quality_report.md.
 
