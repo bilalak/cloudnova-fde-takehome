@@ -17,7 +17,7 @@ python -m app clean                       # build the clean database, print the 
 python -m app ask "How much have we given back in refunds?"
 ```
 
-`ask` prints the answer, the SQL (`Query:`) and the row count (`Sources:`). Exit code: 0 answered, 2 declined, 1 error (e.g. `clean` not run yet). Evals: `python evals/run_evals.py`. Settings live in [`app/config.py`](app/config.py); `RAW_CSV`, `DB_PATH`, `CLEANED_DIR` and `AS_OF_DATE` can be overridden by environment variables or `.env`.
+`ask` prints the answer, the SQL (`Query:`) and the row count (`Sources:`). Exit code: 0 answered, 2 declined, 1 error (e.g. `clean` not run yet). Evals: `python evals/run_evals.py`. Settings live in [`app/config.py`](app/config.py); `RAW_CSV`, `DB_PATH`, `CLEANED_DIR` and `AS_OF_DATE` can be overridden by environment variables or a `.env` (copy [`.env.example`](.env.example)).
 
 ## The rules (specs)
 
@@ -28,6 +28,8 @@ The specs were written first and are the source of truth: [`schema.md`](specs/sc
 - **Gates:** 5,125 rows → minus 82 exact and 43 near-duplicates → exactly 5,000 invoices, 3,815 accounts, no missing key fields, negatives only on refunds. Any failure → nothing written.
 
 ## How it fits together
+
+Component-by-component table: [`docs/architecture.md`](docs/architecture.md).
 
 ```mermaid
 flowchart LR
@@ -98,4 +100,24 @@ flowchart LR
 
 The data was profiled and the specs in `specs/` were committed **before any code** (`7415583`). The pipeline, router and eval harness were then generated from the specs with **Claude Code**, steered by [`CLAUDE.md`](CLAUDE.md): specs are the source of truth, pandas + DuckDB only, config over hard-coding, gates never lowered, `expected.json` never edited to pass, unclear spec → stop and ask.
 
-That last rule fired once: the first run stopped because 27 duplicate invoice IDs tied on status and date, which the spec doesn't break. The tied rows were identical once cleaned, so a tie is now accepted only when rows match. The commit history shows each step.
+That last rule fired once: the first run stopped because 27 duplicate invoice IDs tied on status and date, which the spec doesn't break. The tied rows were identical once cleaned, so a tie is now accepted only when rows match. The commit history shows each step; the prompts and decision points are in [`docs/prompt-log.md`](docs/prompt-log.md).
+
+## Submission status
+
+| Deliverable | Status |
+|---|---|
+| README | Done (this file) |
+| AI configuration | Done: [`CLAUDE.md`](CLAUDE.md) |
+| Prompt log | Done: [`docs/prompt-log.md`](docs/prompt-log.md) |
+| Architecture diagram | Done: above and [`docs/architecture.md`](docs/architecture.md) |
+| Specs | Done: [`specs/`](specs/), updated to record the rules decided during the build |
+| Eval harness | Done: 11 PASS, 1 expected XFAIL |
+| Production hardening (bonus) | Written, not yet run: [`.github/workflows/evals.yml`](.github/workflows/evals.yml) |
+
+**Still missing**
+
+- **Public GitHub repo.** The project exists only locally. Once it is pushed, CI runs for the first time.
+- **First CI run.** The workflow has only been checked against the local run (`clean` exit 0, evals exit 0), not on GitHub Actions.
+- **Independent check of the expected values.** The core values in `evals/expected.json` match the app's own saved output (`evals/eval1–6.md`). A script that recomputes them from the raw CSV without `app/` would show they are independent.
+- **Optional screen recording** (3–5 minutes), which the assignment encourages.
+
