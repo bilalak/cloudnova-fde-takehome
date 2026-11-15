@@ -112,12 +112,10 @@ That last rule fired once: the first run stopped because 27 duplicate invoice ID
 | Architecture diagram | Done: above and [`docs/architecture.md`](docs/architecture.md) |
 | Specs | Done: [`specs/`](specs/), updated to record the rules decided during the build |
 | Eval harness | Done: 11 PASS, 1 expected XFAIL |
-| Production hardening (bonus) | Written, not yet run: [`.github/workflows/evals.yml`](.github/workflows/evals.yml) |
+| Production hardening (bonus) | Done: [`.github/workflows/evals.yml`](.github/workflows/evals.yml) runs `clean` and the evals on every push; passing on GitHub Actions ([runs](https://github.com/bilalak/cloudnova-fde-takehome/actions)) |
 
 **Still missing**
 
-- **Public GitHub repo.** The project exists only locally. Once it is pushed, CI runs for the first time.
-- **First CI run.** The workflow has only been checked against the local run (`clean` exit 0, evals exit 0), not on GitHub Actions.
 - **Independent check of the expected values.** The core values in `evals/expected.json` match the app's own saved output (`evals/eval1–6.md`). A script that recomputes them from the raw CSV without `app/` would show they are independent.
 - **Optional screen recording** (3–5 minutes), which the assignment encourages.
 
